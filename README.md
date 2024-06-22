@@ -1,3 +1,3 @@
-# eyedance
+# EyeDance
 
-A new Flutter project.
+Pose detection for learning dance moves on TikTok
