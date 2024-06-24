@@ -10,11 +10,9 @@ class EyeDance extends StatefulWidget {
 class _EyeDanceState extends State<EyeDance> {
     @override
     Widget build(BuildContext context) {
-        return const MaterialApp(
-            home: Scaffold(
-            body: Center(
-                child: Text( "EyeDance" )
-                )
+        return const Scaffold(
+        body: Center(
+            child: Text( "EyeDance" )
             )
         );
     }
