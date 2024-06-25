@@ -12,11 +12,15 @@ Future<void> main() async {
 
     final cameras = await availableCameras();
     final settings = await SharedPreferences.getInstance();
-    final perms = await [
+    Map<Permission, PermissionStatus> perms = await [
         Permission.camera,
         Permission.microphone,
         Permission.mediaLibrary
     ].request();
+
+    if( perms.values.every( (value) => value == PermissionStatus.granted ) ) {
+
+    }
 
 	SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
