@@ -341,7 +341,27 @@ class _DancePreviewState extends State<DancePreview> with TickerProviderStateMix
                         label: "Discard"
                     )
                 ]
-            ) : const BottomAppBar()
+            ) : NavigationBar(
+                onDestinationSelected: (value) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text( value == 0 ? "Analyzing" : "Practice cancelled" ),
+                            behavior: SnackBarBehavior.floating,
+                        )
+                    );
+                },
+                destinations: const [
+                    NavigationDestination(
+                        icon: Icon( Icons.timeline ),
+                        label: "Analyze dance"
+                    ),
+                    NavigationDestination(
+                        icon: Icon( Icons.refresh ),
+                        label: "Choose another"
+                    )
+                ]
+            )
         );
     }
 }

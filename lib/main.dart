@@ -10,19 +10,16 @@ import "eyedance.dart";
 Future<void> main() async {
 	WidgetsFlutterBinding.ensureInitialized();
 
+	SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
     final cameras = await availableCameras();
     final settings = await SharedPreferences.getInstance();
-    Map<Permission, PermissionStatus> perms = await [
-        Permission.camera,
-        Permission.microphone,
-        Permission.mediaLibrary
-    ].request();
+    final perms = [Permission.camera, Permission.microphone, Permission.mediaLibrary];
+    Map<Permission, PermissionStatus> statuses = await perms.request();
 
-    if( perms.values.every( (value) => value == PermissionStatus.granted ) ) {
-
+    if( statuses.values.every( (value) => value == PermissionStatus.granted ) ) {
+        
     }
-
-	SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
 	runApp(
         MaterialApp(
