@@ -27,18 +27,23 @@ class CameraPage extends StatefulWidget {
 }
 
 class _CameraPageState extends State<CameraPage> {
-    late bool frontOrBack;
+    late int prevCam;
     late CameraController _cameraController;
     late Future<void> _initalizeControllerFuture;
 
     VideoPlayerController? videoController;
     Future<void>? initializeVideoPlayerFuture;
 
-    PoseDetector? poseDetector;
-
     final imagePicker = ImagePicker();
 
     bool isRecording = false;
+
+    PoseDetector? poseDetector;
+    // bool _canProcess = true;
+    // bool _isBusy = false;
+    // CustomPaint? _customPaint;
+    // String? _text;
+    late CameraLensDirection cameraLensDirection;
 
     void initPoseDetector() {
         poseDetector = PoseDetector(
@@ -49,14 +54,16 @@ class _CameraPageState extends State<CameraPage> {
     }
 
     void initCamera() {
-        frontOrBack = widget.settings.getBool( "frontOrBack" ) ?? true;
+        prevCam = widget.settings.getInt( "prevCam" ) ?? 0;
 
         _cameraController = CameraController(
-            widget.cameras[ frontOrBack ? 0 : 1 ],
+            widget.cameras[ prevCam ],
             ResolutionPreset.values[ widget.settings.getInt( "resolutionPreset" ) ?? 0 ]
         );
 
         _initalizeControllerFuture = _cameraController.initialize();
+
+        cameraLensDirection = _cameraController.description.lensDirection;
     }
 
     void initDancePreview( XFile source, bool fromCamera ) async {
@@ -193,9 +200,10 @@ class _CameraPageState extends State<CameraPage> {
                                     } else {
                                         try {
                                             await _cameraController.dispose();
-                                            setState( () => frontOrBack = !frontOrBack );
-                                            widget.settings.setBool( "frontOrBack", frontOrBack );
+                                            setState( () => prevCam = 1 - prevCam );
+                                            widget.settings.setInt( "prevCam", prevCam );
                                             initCamera();
+                                            setState( () => cameraLensDirection = _cameraController.description.lensDirection );
                                         } catch (e) {
                                             // HANDLE ERROR
                                         }
