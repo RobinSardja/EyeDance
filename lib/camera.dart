@@ -12,6 +12,8 @@ import "package:path_provider/path_provider.dart";
 import "package:shared_preferences/shared_preferences.dart";
 import "package:video_player/video_player.dart";
 
+import "pose_detection/pose_painter.dart";
+
 class CameraPage extends StatefulWidget {
 	const CameraPage({
         super.key,
@@ -39,10 +41,10 @@ class _CameraPageState extends State<CameraPage> {
     bool isRecording = false;
 
     PoseDetector? poseDetector;
-    // bool _canProcess = true;
-    // bool _isBusy = false;
-    // CustomPaint? _customPaint;
-    // String? _text;
+    bool _canProcess = true;
+    bool _isBusy = false;
+    CustomPaint? _customPaint;
+    String? _text;
     late CameraLensDirection cameraLensDirection;
 
     void initPoseDetector() {
@@ -51,6 +53,32 @@ class _CameraPageState extends State<CameraPage> {
                 model: widget.settings.getBool( "hyperAccuracy" ) ?? false ? PoseDetectionModel.accurate : PoseDetectionModel.base,
             )
         );
+    }
+
+    Future<void> _processImage( InputImage inputImage ) async {
+        if( !_canProcess ) return;
+        if( _isBusy ) return;
+        _isBusy = true;
+        setState(() {
+            _text = '';
+        });
+        final poses = await poseDetector!.processImage(inputImage);
+        if( inputImage.metadata?.size != null && inputImage.metadata?.rotation != null ) {
+            final painter = PosePainter(
+                poses,
+                inputImage.metadata!.size,
+                inputImage.metadata!.rotation,
+                cameraLensDirection
+            );
+            _customPaint = CustomPaint( painter: painter );
+        } else {
+            _text = "Poses found: ${poses.length}\n\n";
+            _customPaint = null;
+        }
+        _isBusy = false;
+        if( mounted ) {
+            setState(() {});
+        }
     }
 
     void initCamera() {
@@ -102,6 +130,7 @@ class _CameraPageState extends State<CameraPage> {
     void initState() {
         super.initState();
 
+        initPoseDetector();
         initCamera();
     }
 
