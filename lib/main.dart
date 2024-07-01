@@ -17,8 +17,6 @@ Future<void> main() async {
     final perms = [Permission.camera, Permission.microphone, Permission.mediaLibrary];
     Map<Permission, PermissionStatus> statuses = await perms.request();
 
-    print( "BRUH WTF ${cameras.length}" );
-
     if( statuses.values.every( (value) => value == PermissionStatus.granted ) ) {
         
     }
