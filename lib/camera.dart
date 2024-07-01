@@ -2,6 +2,7 @@ import "dart:async";
 import "dart:io";
 
 import "package:flutter/material.dart";
+import "package:flutter/services.dart";
 
 import "package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart";
 
@@ -44,13 +45,47 @@ class _CameraPageState extends State<CameraPage> {
     bool _canProcess = true;
     bool _isBusy = false;
     CustomPaint? _customPaint;
-    String? _text;
     late CameraLensDirection cameraLensDirection;
 
-    void initPoseDetector() {
-        poseDetector = PoseDetector(
-            options: PoseDetectorOptions(
-                model: widget.settings.getBool( "hyperAccuracy" ) ?? false ? PoseDetectionModel.accurate : PoseDetectionModel.base,
+    final _orientations = {
+        DeviceOrientation.portraitUp: 0,
+        DeviceOrientation.landscapeLeft: 90,
+        DeviceOrientation.portraitDown: 180,
+        DeviceOrientation.landscapeRight: 270
+    };
+
+    InputImage? _inputImageFromCameraImage( CameraImage image ) {
+        final camera = _cameraController.description;
+        final sensorOrientation = camera.sensorOrientation;
+
+        InputImageRotation? rotation;
+        if( Platform.isIOS ) {
+            rotation = InputImageRotationValue.fromRawValue(sensorOrientation);
+        } else {
+            var rotationCompensation = _orientations[ _cameraController.value.deviceOrientation ];
+            if( rotationCompensation == null ) return null;
+            if( camera.lensDirection == CameraLensDirection.front ) {
+                rotationCompensation = (sensorOrientation + rotationCompensation) % 360;
+            } else {
+                rotationCompensation = (sensorOrientation - rotationCompensation + 360) % 360;
+            }
+            rotation = InputImageRotationValue.fromRawValue(rotationCompensation);
+        }
+        if( rotation == null ) return null;
+
+        final format = InputImageFormatValue.fromRawValue(image.format.raw);
+        if( format == null || (Platform.isAndroid && format != InputImageFormat.nv21) || (Platform.isIOS && format != InputImageFormat.bgra8888)) return null;
+        if( image.planes.length != 1 ) return null;
+
+        final plane = image.planes.first;
+
+        return InputImage.fromBytes(
+            bytes: plane.bytes,
+            metadata: InputImageMetadata(
+                size: Size( image.width.toDouble(), image.height.toDouble() ),
+                rotation: rotation,
+                format: format,
+                bytesPerRow: plane.bytesPerRow
             )
         );
     }
@@ -59,9 +94,7 @@ class _CameraPageState extends State<CameraPage> {
         if( !_canProcess ) return;
         if( _isBusy ) return;
         _isBusy = true;
-        setState(() {
-            _text = '';
-        });
+        setState(() {});
         final poses = await poseDetector!.processImage(inputImage);
         if( inputImage.metadata?.size != null && inputImage.metadata?.rotation != null ) {
             final painter = PosePainter(
@@ -72,13 +105,26 @@ class _CameraPageState extends State<CameraPage> {
             );
             _customPaint = CustomPaint( painter: painter );
         } else {
-            _text = "Poses found: ${poses.length}\n\n";
             _customPaint = null;
         }
         _isBusy = false;
         if( mounted ) {
             setState(() {});
         }
+    }
+
+    void _processCameraImage( CameraImage image ) {
+        final inputImage = _inputImageFromCameraImage(image);
+        if( inputImage == null ) return;
+        _processImage(inputImage);
+    }
+
+    void initPoseDetector() {
+        poseDetector = PoseDetector(
+            options: PoseDetectorOptions(
+                model: widget.settings.getBool( "hyperAccuracy" ) ?? false ? PoseDetectionModel.accurate : PoseDetectionModel.base,
+            )
+        );
     }
 
     void initCamera() {
@@ -89,7 +135,10 @@ class _CameraPageState extends State<CameraPage> {
             ResolutionPreset.values[ widget.settings.getInt( "resolutionPreset" ) ?? 0 ]
         );
 
-        _initalizeControllerFuture = _cameraController.initialize();
+        _initalizeControllerFuture = _cameraController.initialize().then((_) {
+            _cameraController.startImageStream(_processCameraImage);
+            setState(() {});
+        });
 
         cameraLensDirection = _cameraController.description.lensDirection;
     }
@@ -138,6 +187,8 @@ class _CameraPageState extends State<CameraPage> {
     void dispose() {
         _cameraController.dispose();
         videoController?.dispose();
+
+        _canProcess = false;
         poseDetector?.close();
 
         super.dispose();
@@ -154,7 +205,10 @@ class _CameraPageState extends State<CameraPage> {
                             future: _initalizeControllerFuture,
                             builder: (context, snapshot) {
                                 return snapshot.connectionState == ConnectionState.done ?
-                                CameraPreview(_cameraController) :
+                                CameraPreview(
+                                    _cameraController,
+                                    child: _customPaint,
+                                ) :
                                 const Center( child: CircularProgressIndicator.adaptive() );
                             }
                         )
