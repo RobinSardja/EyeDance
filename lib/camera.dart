@@ -74,6 +74,7 @@ class _CameraPageState extends State<CameraPage> {
         if( rotation == null ) return null;
 
         final format = InputImageFormatValue.fromRawValue(image.format.raw);
+
         if( format == null || (Platform.isAndroid && format != InputImageFormat.nv21) || (Platform.isIOS && format != InputImageFormat.bgra8888)) return null;
         if( image.planes.length != 1 ) return null;
 
@@ -132,11 +133,15 @@ class _CameraPageState extends State<CameraPage> {
 
         _cameraController = CameraController(
             widget.cameras[ prevCam ],
-            ResolutionPreset.values[ widget.settings.getInt( "resolutionPreset" ) ?? 0 ]
+            ResolutionPreset.values[ widget.settings.getInt( "resolutionPreset" ) ?? 0 ],
+            imageFormatGroup: Platform.isIOS ? ImageFormatGroup.bgra8888 : ImageFormatGroup.nv21
         );
 
         _initalizeControllerFuture = _cameraController.initialize().then((_) {
+            if( !mounted ) return;
+
             _cameraController.startImageStream(_processCameraImage);
+
             setState(() {});
         });
 
