@@ -19,6 +19,30 @@ class PosePainter extends CustomPainter {
     final InputImageRotation rotation;
     final CameraLensDirection cameraLensDirection;
 
+    final unwantedPoints = {
+        PoseLandmarkType.nose,
+        PoseLandmarkType.leftEyeInner,
+        PoseLandmarkType.leftEye,
+        PoseLandmarkType.leftEyeOuter,
+        PoseLandmarkType.rightEyeInner,
+        PoseLandmarkType.rightEye,
+        PoseLandmarkType.rightEyeOuter,
+        PoseLandmarkType.leftEar,
+        PoseLandmarkType.rightEar,
+        PoseLandmarkType.leftMouth,
+        PoseLandmarkType.rightMouth,
+        PoseLandmarkType.leftPinky,
+        PoseLandmarkType.rightPinky,
+        PoseLandmarkType.leftIndex,
+        PoseLandmarkType.rightIndex,
+        PoseLandmarkType.leftThumb,
+        PoseLandmarkType.rightThumb,
+        PoseLandmarkType.leftHeel,
+        PoseLandmarkType.rightHeel,
+        PoseLandmarkType.leftFootIndex,
+        PoseLandmarkType.rightFootIndex
+    };
+
     @override
     void paint( Canvas canvas, Size size ) {
         final paint = Paint()
@@ -28,6 +52,9 @@ class PosePainter extends CustomPainter {
 
         for( final pose in poses ) {
             pose.landmarks.forEach( (_, landmark ) {
+
+                if( unwantedPoints.contains(landmark.type) ) return;
+
                 canvas.drawCircle(
                     Offset(
                         translateX(
