@@ -31,6 +31,8 @@ class CameraPage extends StatefulWidget {
 
 class _CameraPageState extends State<CameraPage> {
     late int prevCam;
+    late bool enableTracking;
+
     late CameraController _cameraController;
     late Future<void> _initalizeControllerFuture;
 
@@ -138,7 +140,7 @@ class _CameraPageState extends State<CameraPage> {
         );
 
         _initalizeControllerFuture = _cameraController.initialize().then((_) {
-            _cameraController.startImageStream(_processCameraImage);
+            if( enableTracking ) _cameraController.startImageStream(_processCameraImage);
         });
 
         cameraLensDirection = _cameraController.description.lensDirection;
@@ -180,7 +182,8 @@ class _CameraPageState extends State<CameraPage> {
     void initState() {
         super.initState();
 
-        initPoseDetector();
+        enableTracking = widget.settings.getBool( "enableTracking" ) ?? true;
+        if( enableTracking ) initPoseDetector();
         initCamera();
     }
 
