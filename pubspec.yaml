@@ -7,7 +7,7 @@ environment:
   sdk: '>=3.4.3 <4.0.0'
 
 dependencies:
-  camera: ^0.11.0+1
+  camera: 0.10.5+3
   flutter:
     sdk: flutter
   gal: ^2.3.0
