@@ -123,12 +123,12 @@ class _CameraPageState extends State<CameraPage> {
     void initPoseDetector() {
         poseDetector = PoseDetector(
             options: PoseDetectorOptions(
-                model: widget.settings.getBool( "hyperAccuracy" ) ?? false ? PoseDetectionModel.accurate : PoseDetectionModel.base,
+                model: ( widget.settings.getBool( "hyperAccuracy" ) ?? false ) ? PoseDetectionModel.accurate : PoseDetectionModel.base,
             )
         );
     }
 
-    void initCamera() {
+    initCamera() {
         prevCam = widget.settings.getInt( "prevCam" ) ?? 0;
 
         _cameraController = CameraController(
@@ -138,11 +138,7 @@ class _CameraPageState extends State<CameraPage> {
         );
 
         _initalizeControllerFuture = _cameraController.initialize().then((_) {
-            if( !mounted ) return;
-
             _cameraController.startImageStream(_processCameraImage);
-
-            setState(() {});
         });
 
         cameraLensDirection = _cameraController.description.lensDirection;
@@ -287,7 +283,6 @@ class _CameraPageState extends State<CameraPage> {
                                         );
                                     } else {
                                         try {
-                                            await _cameraController.dispose();
                                             setState( () => prevCam = 1 - prevCam );
                                             widget.settings.setInt( "prevCam", prevCam );
                                             initCamera();
