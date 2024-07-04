@@ -41,6 +41,7 @@ class _CameraPageState extends State<CameraPage> {
 
     final imagePicker = ImagePicker();
 
+    bool isFlipping = false;
     bool isRecording = false;
 
     PoseDetector? poseDetector;
@@ -96,8 +97,9 @@ class _CameraPageState extends State<CameraPage> {
     Future<void> _processImage( InputImage inputImage ) async {
         if( !_canProcess ) return;
         if( _isBusy ) return;
-        _isBusy = true;
-        setState(() {});
+
+        setState(() => _isBusy = true );
+
         final poses = await poseDetector!.processImage(inputImage);
         if( inputImage.metadata?.size != null && inputImage.metadata?.rotation != null ) {
             final painter = PosePainter(
@@ -110,9 +112,9 @@ class _CameraPageState extends State<CameraPage> {
         } else {
             _customPaint = null;
         }
-        _isBusy = false;
+
         if( mounted ) {
-            setState(() {});
+            setState( () => _isBusy = false );
         }
     }
 
@@ -130,7 +132,7 @@ class _CameraPageState extends State<CameraPage> {
         );
     }
 
-    initCamera() {
+    void initCamera() {
         prevCam = widget.settings.getInt( "prevCam" ) ?? 0;
 
         _cameraController = CameraController(
@@ -277,6 +279,9 @@ class _CameraPageState extends State<CameraPage> {
                             padding: const EdgeInsets.all(16.0),
                             child: FloatingActionButton(
                                 onPressed: () async {
+                                    if( isFlipping ) return;
+                                    setState( () => isFlipping = true );
+
                                     if( isRecording ) {
                                         ScaffoldMessenger.of(context).showSnackBar(
                                             const SnackBar(
@@ -293,6 +298,10 @@ class _CameraPageState extends State<CameraPage> {
                                         } catch (e) {
                                             // HANDLE ERROR
                                         }
+                                    }
+
+                                    if( mounted ) {
+                                        setState( () => isFlipping = false );
                                     }
                                 },
                                 child: Icon( Platform.isIOS ? Icons.flip_camera_ios : Icons.flip_camera_android )
